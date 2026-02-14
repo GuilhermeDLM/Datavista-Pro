@@ -1,0 +1,957 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DataVista Analytics</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #0f172a;
+            --accent: #f59e0b;
+            --secondary: #1e293b;
+            --surface: #f8fafc;
+            --border: #e2e8f0;
+            --text: #334155;
+            --text-light: #64748b;
+            --success: #10b981;
+            --error: #ef4444;
+        }
+
+        body {
+            font-family: 'Work Sans', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 40px 20px;
+            color: var(--text);
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 60px;
+            animation: fadeInDown 0.8s ease-out;
+        }
+
+        h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: 72px;
+            font-weight: 900;
+            color: white;
+            text-shadow: 2px 4px 12px rgba(0,0,0,0.2);
+            margin-bottom: 12px;
+            letter-spacing: -2px;
+        }
+
+        .tagline {
+            font-size: 20px;
+            color: rgba(255,255,255,0.9);
+            font-weight: 500;
+            letter-spacing: 0.5px;
+        }
+
+        .main-grid {
+            display: grid;
+            grid-template-columns: 400px 1fr;
+            gap: 30px;
+            animation: fadeInUp 0.8s ease-out 0.2s backwards;
+        }
+
+        .sidebar {
+            background: white;
+            border-radius: 24px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+            height: fit-content;
+            position: sticky;
+            top: 20px;
+        }
+
+        .content-area {
+            background: white;
+            border-radius: 24px;
+            padding: 50px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+            min-height: 600px;
+        }
+
+        .section-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 24px;
+            position: relative;
+            padding-bottom: 16px;
+        }
+
+        .section-title::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 60px;
+            height: 4px;
+            background: var(--accent);
+            border-radius: 2px;
+        }
+
+        .upload-zone {
+            border: 3px dashed var(--border);
+            border-radius: 16px;
+            padding: 50px 30px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: var(--surface);
+            margin-bottom: 30px;
+        }
+
+        .upload-zone:hover {
+            border-color: var(--accent);
+            background: #fffbeb;
+            transform: translateY(-2px);
+        }
+
+        .upload-zone.dragover {
+            border-color: var(--accent);
+            background: #fffbeb;
+            border-style: solid;
+        }
+
+        .upload-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+            color: var(--text-light);
+        }
+
+        .upload-text {
+            font-size: 16px;
+            color: var(--text);
+            font-weight: 500;
+            margin-bottom: 8px;
+        }
+
+        .upload-subtext {
+            font-size: 14px;
+            color: var(--text-light);
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .file-info {
+            background: #f0fdf4;
+            border: 1px solid #86efac;
+            border-radius: 12px;
+            padding: 16px 20px;
+            margin-bottom: 20px;
+            display: none;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .file-info.show {
+            display: flex;
+        }
+
+        .file-icon {
+            font-size: 24px;
+        }
+
+        .file-details {
+            flex: 1;
+        }
+
+        .file-name {
+            font-weight: 600;
+            color: var(--primary);
+            margin-bottom: 4px;
+        }
+
+        .file-size {
+            font-size: 13px;
+            color: var(--text-light);
+        }
+
+        .btn {
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 16px 32px;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 100%;
+            font-family: 'Work Sans', sans-serif;
+            box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+        }
+
+        .btn:hover {
+            background: #d97706;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(245, 158, 11, 0.4);
+        }
+
+        .btn:disabled {
+            background: var(--border);
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .btn-secondary {
+            background: var(--primary);
+            box-shadow: 0 4px 12px rgba(15, 23, 42, 0.3);
+            margin-top: 12px;
+        }
+
+        .btn-secondary:hover {
+            background: var(--secondary);
+            box-shadow: 0 6px 20px rgba(15, 23, 42, 0.4);
+        }
+
+        .format-selector {
+            margin-bottom: 24px;
+        }
+
+        .format-label {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text);
+            margin-bottom: 12px;
+            display: block;
+        }
+
+        .format-options {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .format-option {
+            padding: 14px;
+            border: 2px solid var(--border);
+            border-radius: 10px;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.3s ease;
+            background: white;
+        }
+
+        .format-option:hover {
+            border-color: var(--accent);
+            background: #fffbeb;
+        }
+
+        .format-option.selected {
+            border-color: var(--accent);
+            background: #fffbeb;
+            box-shadow: 0 4px 12px rgba(245, 158, 11, 0.2);
+        }
+
+        .format-icon {
+            font-size: 28px;
+            margin-bottom: 6px;
+        }
+
+        .format-name {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text);
+        }
+
+        .analysis-results {
+            display: none;
+        }
+
+        .analysis-results.show {
+            display: block;
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 24px;
+            margin-bottom: 40px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            padding: 28px;
+            border-radius: 16px;
+            color: white;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+            animation: pulse 3s ease-in-out infinite;
+        }
+
+        .stat-label {
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            opacity: 0.8;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .stat-value {
+            font-size: 36px;
+            font-weight: 700;
+            font-family: 'Playfair Display', serif;
+            margin-bottom: 4px;
+        }
+
+        .stat-change {
+            font-size: 13px;
+            opacity: 0.9;
+        }
+
+        .chart-section {
+            margin-bottom: 40px;
+        }
+
+        .chart-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .chart-container {
+            background: var(--surface);
+            padding: 30px;
+            border-radius: 16px;
+            border: 1px solid var(--border);
+        }
+
+        .insights-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .insight-item {
+            padding: 20px;
+            background: var(--surface);
+            border-left: 4px solid var(--accent);
+            border-radius: 8px;
+            margin-bottom: 16px;
+            transition: all 0.3s ease;
+        }
+
+        .insight-item:hover {
+            transform: translateX(4px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+
+        .insight-icon {
+            font-size: 20px;
+            margin-right: 12px;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 60px;
+        }
+
+        .loading.show {
+            display: block;
+        }
+
+        .spinner {
+            width: 60px;
+            height: 60px;
+            border: 4px solid var(--border);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        .loading-text {
+            font-size: 16px;
+            color: var(--text-light);
+            font-weight: 500;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 80px 40px;
+            color: var(--text-light);
+        }
+
+        .empty-icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+            opacity: 0.3;
+        }
+
+        .empty-text {
+            font-size: 18px;
+            font-weight: 500;
+        }
+
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 0.5; }
+        }
+
+        @media (max-width: 1024px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .sidebar {
+                position: static;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            h1 {
+                font-size: 48px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>DataVista</h1>
+            <p class="tagline">Transform your data into stunning insights</p>
+        </header>
+
+        <div class="main-grid">
+            <!-- Sidebar -->
+            <div class="sidebar">
+                <h2 class="section-title">Upload Data</h2>
+                
+                <div class="upload-zone" id="uploadZone">
+                    <div class="upload-icon">📊</div>
+                    <div class="upload-text">Drop your file here</div>
+                    <div class="upload-subtext">or click to browse</div>
+                    <input type="file" id="fileInput" accept=".xlsx,.xls,.csv,.txt">
+                </div>
+
+                <div class="file-info" id="fileInfo">
+                    <span class="file-icon">📄</span>
+                    <div class="file-details">
+                        <div class="file-name" id="fileName"></div>
+                        <div class="file-size" id="fileSize"></div>
+                    </div>
+                </div>
+
+                <div class="format-selector">
+                    <label class="format-label">Export Format</label>
+                    <div class="format-options">
+                        <div class="format-option selected" data-format="pptx">
+                            <div class="format-icon">📊</div>
+                            <div class="format-name">PowerPoint</div>
+                        </div>
+                        <div class="format-option" data-format="pdf">
+                            <div class="format-icon">📄</div>
+                            <div class="format-name">PDF Report</div>
+                        </div>
+                    </div>
+                </div>
+
+                <button class="btn" id="analyzeBtn" disabled>
+                    Analyze Data
+                </button>
+
+                <button class="btn btn-secondary" id="exportBtn" disabled>
+                    Export Results
+                </button>
+            </div>
+
+            <!-- Main Content -->
+            <div class="content-area">
+                <div class="empty-state" id="emptyState">
+                    <div class="empty-icon">📈</div>
+                    <div class="empty-text">Upload a file to get started</div>
+                </div>
+
+                <div class="loading" id="loading">
+                    <div class="spinner"></div>
+                    <div class="loading-text">Analyzing your data...</div>
+                </div>
+
+                <div class="analysis-results" id="results">
+                    <h2 class="section-title">Analysis Results</h2>
+
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-label">Revenue Growth</div>
+                            <div class="stat-value" id="revenueGrowth">-</div>
+                            <div class="stat-change" id="revenueChange">-</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">Avg. Price</div>
+                            <div class="stat-value" id="avgPrice">-</div>
+                            <div class="stat-change" id="priceChange">-</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">Profit Margin</div>
+                            <div class="stat-value" id="profitMargin">-</div>
+                            <div class="stat-change" id="marginChange">-</div>
+                        </div>
+                    </div>
+
+                    <div class="chart-section">
+                        <h3 class="chart-title">
+                            <span>📈</span> Revenue Trend
+                        </h3>
+                        <div class="chart-container">
+                            <canvas id="revenueChart"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="chart-section">
+                        <h3 class="chart-title">
+                            <span>💰</span> Price Analysis
+                        </h3>
+                        <div class="chart-container">
+                            <canvas id="priceChart"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="chart-section">
+                        <h3 class="chart-title">
+                            <span>📊</span> Profitability Metrics
+                        </h3>
+                        <div class="chart-container">
+                            <canvas id="profitChart"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="chart-section">
+                        <h3 class="chart-title">
+                            <span>💡</span> Key Insights
+                        </h3>
+                        <ul class="insights-list" id="insightsList"></ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let uploadedData = null;
+        let analysisData = null;
+        let selectedFormat = 'pptx';
+        let charts = {};
+
+        // Elements
+        const uploadZone = document.getElementById('uploadZone');
+        const fileInput = document.getElementById('fileInput');
+        const fileInfo = document.getElementById('fileInfo');
+        const fileName = document.getElementById('fileName');
+        const fileSize = document.getElementById('fileSize');
+        const analyzeBtn = document.getElementById('analyzeBtn');
+        const exportBtn = document.getElementById('exportBtn');
+        const emptyState = document.getElementById('emptyState');
+        const loading = document.getElementById('loading');
+        const results = document.getElementById('results');
+        const formatOptions = document.querySelectorAll('.format-option');
+
+        // Upload zone interactions
+        uploadZone.addEventListener('click', () => fileInput.click());
+
+        uploadZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadZone.classList.add('dragover');
+        });
+
+        uploadZone.addEventListener('dragleave', () => {
+            uploadZone.classList.remove('dragover');
+        });
+
+        uploadZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadZone.classList.remove('dragover');
+            const file = e.dataTransfer.files[0];
+            if (file) handleFile(file);
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) handleFile(file);
+        });
+
+        // Format selection
+        formatOptions.forEach(option => {
+            option.addEventListener('click', () => {
+                formatOptions.forEach(opt => opt.classList.remove('selected'));
+                option.classList.add('selected');
+                selectedFormat = option.dataset.format;
+            });
+        });
+
+        // Handle file upload
+        function handleFile(file) {
+            fileName.textContent = file.name;
+            fileSize.textContent = `${(file.size / 1024).toFixed(2)} KB`;
+            fileInfo.classList.add('show');
+            analyzeBtn.disabled = false;
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, { type: 'array' });
+                const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                uploadedData = XLSX.utils.sheet_to_json(firstSheet);
+                console.log('Data loaded:', uploadedData.length, 'rows');
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        // Analyze data
+        analyzeBtn.addEventListener('click', () => {
+            if (!uploadedData) return;
+
+            emptyState.style.display = 'none';
+            results.classList.remove('show');
+            loading.classList.add('show');
+
+            // Simulate processing time
+            setTimeout(() => {
+                performAnalysis();
+                displayResults();
+                loading.classList.remove('show');
+                results.classList.add('show');
+                exportBtn.disabled = false;
+            }, 1500);
+        });
+
+        // Perform analysis
+        function performAnalysis() {
+            // Process data
+            const processedData = processData(uploadedData);
+            analysisData = calculateMetrics(processedData);
+        }
+
+        function processData(data) {
+            // Convert Excel date serial to JS date if needed
+            const processed = data.map(row => {
+                const newRow = { ...row };
+                
+                // Try to parse date
+                if (row.Date && typeof row.Date === 'number') {
+                    const date = new Date((row.Date - 25569) * 86400 * 1000);
+                    newRow.Date = date;
+                    newRow.Month = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+                } else if (row.Date) {
+                    const date = new Date(row.Date);
+                    newRow.Month = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+                }
+
+                // Calculate price per unit if we have revenue and units
+                if (row.Revenue && row['Units Sold']) {
+                    newRow.PricePerUnit = row.Revenue / row['Units Sold'];
+                }
+
+                return newRow;
+            });
+
+            return processed;
+        }
+
+        function calculateMetrics(data) {
+            // Group by month
+            const monthlyData = {};
+            
+            data.forEach(row => {
+                const month = row.Month || 'Unknown';
+                if (!monthlyData[month]) {
+                    monthlyData[month] = {
+                        revenue: 0,
+                        units: 0,
+                        profit: 0,
+                        cost: 0,
+                        count: 0
+                    };
+                }
+                
+                monthlyData[month].revenue += row.Revenue || 0;
+                monthlyData[month].units += row['Units Sold'] || 0;
+                monthlyData[month].profit += row.Profit || 0;
+                monthlyData[month].cost += row.Cost || 0;
+                monthlyData[month].count++;
+            });
+
+            // Calculate monthly metrics
+            const months = Object.keys(monthlyData).sort();
+            const metrics = {
+                months: months,
+                revenue: [],
+                price: [],
+                profitMargin: [],
+                insights: []
+            };
+
+            months.forEach(month => {
+                const m = monthlyData[month];
+                metrics.revenue.push(m.revenue);
+                metrics.price.push(m.units > 0 ? m.revenue / m.units : 0);
+                metrics.profitMargin.push(m.revenue > 0 ? (m.profit / m.revenue * 100) : 0);
+            });
+
+            // Calculate overall stats
+            const firstRevenue = metrics.revenue[0];
+            const lastRevenue = metrics.revenue[metrics.revenue.length - 1];
+            const revenueGrowth = ((lastRevenue - firstRevenue) / firstRevenue * 100);
+            
+            const avgPrice = metrics.price.reduce((a, b) => a + b, 0) / metrics.price.length;
+            const firstPrice = metrics.price[0];
+            const lastPrice = metrics.price[metrics.price.length - 1];
+            const priceChange = ((lastPrice - firstPrice) / firstPrice * 100);
+
+            const avgMargin = metrics.profitMargin.reduce((a, b) => a + b, 0) / metrics.profitMargin.length;
+            const firstMargin = metrics.profitMargin[0];
+            const lastMargin = metrics.profitMargin[metrics.profitMargin.length - 1];
+            const marginChange = lastMargin - firstMargin;
+
+            metrics.stats = {
+                revenueGrowth,
+                avgPrice,
+                priceChange,
+                avgMargin,
+                marginChange,
+                maxRevenue: Math.max(...metrics.revenue),
+                minRevenue: Math.min(...metrics.revenue)
+            };
+
+            // Generate insights
+            metrics.insights.push({
+                icon: '📈',
+                text: `Revenue ${revenueGrowth > 0 ? 'grew' : 'declined'} by ${Math.abs(revenueGrowth).toFixed(1)}% over the analysis period`
+            });
+
+            metrics.insights.push({
+                icon: '💰',
+                text: `Average unit price maintained at $${avgPrice.toFixed(2)} with ${priceChange > 0 ? 'an increase' : 'a decrease'} of ${Math.abs(priceChange).toFixed(1)}%`
+            });
+
+            metrics.insights.push({
+                icon: '📊',
+                text: `Profit margin averaged ${avgMargin.toFixed(1)}% ${marginChange > 0 ? 'improving' : 'declining'} by ${Math.abs(marginChange).toFixed(1)} percentage points`
+            });
+
+            const peakMonth = months[metrics.revenue.indexOf(metrics.stats.maxRevenue)];
+            metrics.insights.push({
+                icon: '⭐',
+                text: `Peak performance in ${peakMonth} with $${metrics.stats.maxRevenue.toLocaleString()} in revenue`
+            });
+
+            return metrics;
+        }
+
+        // Display results
+        function displayResults() {
+            const { stats, months, revenue, price, profitMargin, insights } = analysisData;
+
+            // Update stat cards
+            document.getElementById('revenueGrowth').textContent = 
+                `${stats.revenueGrowth > 0 ? '+' : ''}${stats.revenueGrowth.toFixed(1)}%`;
+            document.getElementById('revenueChange').textContent = 
+                `Peak: $${stats.maxRevenue.toLocaleString()}`;
+
+            document.getElementById('avgPrice').textContent = 
+                `$${stats.avgPrice.toFixed(2)}`;
+            document.getElementById('priceChange').textContent = 
+                `Change: ${stats.priceChange > 0 ? '+' : ''}${stats.priceChange.toFixed(1)}%`;
+
+            document.getElementById('profitMargin').textContent = 
+                `${stats.avgMargin.toFixed(1)}%`;
+            document.getElementById('marginChange').textContent = 
+                `Change: ${stats.marginChange > 0 ? '+' : ''}${stats.marginChange.toFixed(1)}pp`;
+
+            // Create charts
+            createChart('revenueChart', 'Revenue Trend', months, revenue, '#f59e0b', 'bar');
+            createChart('priceChart', 'Price Analysis', months, price, '#8b5cf6', 'line');
+            createChart('profitChart', 'Profit Margin', months, profitMargin, '#10b981', 'line');
+
+            // Display insights
+            const insightsList = document.getElementById('insightsList');
+            insightsList.innerHTML = insights.map(insight => `
+                <li class="insight-item">
+                    <span class="insight-icon">${insight.icon}</span>
+                    ${insight.text}
+                </li>
+            `).join('');
+        }
+
+        function createChart(canvasId, label, labels, data, color, type) {
+            const canvas = document.getElementById(canvasId);
+            
+            // Destroy existing chart if it exists
+            if (charts[canvasId]) {
+                charts[canvasId].destroy();
+            }
+
+            const ctx = canvas.getContext('2d');
+            charts[canvasId] = new Chart(ctx, {
+                type: type,
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: label,
+                        data: data,
+                        backgroundColor: color + '20',
+                        borderColor: color,
+                        borderWidth: 3,
+                        tension: 0.4,
+                        fill: type === 'line'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: false,
+                            grid: {
+                                color: '#e2e8f0'
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: false
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Export functionality
+        exportBtn.addEventListener('click', () => {
+            if (!analysisData) return;
+
+            if (selectedFormat === 'pdf') {
+                exportToPDF();
+            } else {
+                alert('PowerPoint export requires backend processing. For now, download the PDF report or contact support for PowerPoint export functionality.');
+            }
+        });
+
+        function exportToPDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            const { stats, insights } = analysisData;
+
+            // Title page
+            doc.setFillColor(15, 23, 42);
+            doc.rect(0, 0, 210, 297, 'F');
+            
+            doc.setTextColor(255, 255, 255);
+            doc.setFontSize(36);
+            doc.text('Data Analysis Report', 105, 140, { align: 'center' });
+            
+            doc.setFontSize(16);
+            doc.text('Generated by DataVista', 105, 155, { align: 'center' });
+
+            // Page 2 - Summary
+            doc.addPage();
+            doc.setFillColor(255, 255, 255);
+            doc.rect(0, 0, 210, 297, 'F');
+            
+            doc.setTextColor(15, 23, 42);
+            doc.setFontSize(24);
+            doc.text('Executive Summary', 20, 30);
+
+            doc.setFontSize(12);
+            let yPos = 50;
+            
+            doc.text(`Revenue Growth: ${stats.revenueGrowth.toFixed(1)}%`, 20, yPos);
+            yPos += 15;
+            doc.text(`Average Price: $${stats.avgPrice.toFixed(2)}`, 20, yPos);
+            yPos += 15;
+            doc.text(`Profit Margin: ${stats.avgMargin.toFixed(1)}%`, 20, yPos);
+            yPos += 30;
+
+            doc.setFontSize(18);
+            doc.text('Key Insights', 20, yPos);
+            yPos += 15;
+
+            doc.setFontSize(11);
+            insights.forEach((insight, i) => {
+                const lines = doc.splitTextToSize(`• ${insight.text}`, 170);
+                doc.text(lines, 20, yPos);
+                yPos += lines.length * 7 + 5;
+            });
+
+            // Save
+            doc.save('analysis-report.pdf');
+        }
+    </script>
+</body>
+</html>
